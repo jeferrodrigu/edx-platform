@@ -354,6 +354,8 @@ def _track_user_registration(user, profile, params, third_party_provider):
                 'is_year_of_birth_selected': bool(profile.year_of_birth),
                 'is_education_selected': bool(profile.level_of_education_display),
                 'is_goal_set': bool(profile.goals),
+                # Google Analytics only accept integers
+                'total_registration_time': int(params.get('totalRegistrationTime', '0').split('.')[0]),
             },
         )
 
