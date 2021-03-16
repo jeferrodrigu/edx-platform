@@ -41,6 +41,7 @@ from openedx.core.djangoapps.bookmarks import api as bookmarks_api
 from common.djangoapps.static_replace import replace_static_urls
 from common.djangoapps.student.auth import has_studio_read_access, has_studio_write_access
 from openedx.core.toggles import ENTRANCE_EXAMS
+from common.djangoapps.track.event_transaction_utils import create_new_event_transaction_id
 from common.djangoapps.util.date_utils import get_default_time_display
 from common.djangoapps.util.json_request import JsonResponse, expect_json
 from common.djangoapps.xblock_django.user_service import DjangoXBlockUserService
@@ -659,9 +660,10 @@ def _save_xblock(user, xblock, data=None, children_strings=None, metadata=None, 
         # If visible_to_staff_only has changed, send a signal to regrade the course
         if _block_visibility_changed(xblock, metadata, old_metadata):
             COURSE_BLOCK_VISIBILTY_CHANGED.send(
-                sender="_save_xblock",
                 user_id=user.id,
+                sender="_save_xblock",
                 course_key=xblock.location.course_key,
+                event_transaction_id=str(create_new_event_transaction_id()),
             )
 
         # Save gating info
