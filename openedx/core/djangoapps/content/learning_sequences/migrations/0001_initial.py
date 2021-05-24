@@ -10,8 +10,27 @@ import model_utils.fields
 import opaque_keys.edx.django.models
 
 
-class Migration(migrations.Migration):
+def forwards(apps, schema_editor):
+    """
+    This function is for running the SQL migrations when we create a new model in edx, and the migrations should be
+    ran in test
+    """
+    if hasattr(schema_editor.connection, 'is_in_memory_db') and schema_editor.connection.is_in_memory_db():
+        # sqlite3 doesn't support 'MODIFY', so skipping during tests
+        return
 
+    schema_editor.execute(
+        'ALTER TABLE learning_sequences_learningcontext MODIFY context_key VARCHAR(255) '
+        'CHARACTER SET utf8 COLLATE utf8_bin;')
+    schema_editor.execute(
+        'ALTER TABLE learning_sequences_coursesection MODIFY usage_key VARCHAR(255) '
+        'CHARACTER SET utf8 COLLATE utf8_bin;')
+    schema_editor.execute(
+        'ALTER TABLE learning_sequences_learningsequence MODIFY usage_key VARCHAR(255) '
+        'CHARACTER SET utf8 COLLATE utf8_bin;')
+
+
+class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
@@ -27,8 +46,10 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=1000)),
                 ('hide_from_toc', models.BooleanField(default=False)),
                 ('visible_to_staff_only', models.BooleanField(default=False)),
-                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, editable=False, verbose_name='created')),
-                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, editable=False, verbose_name='modified')),
+                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, editable=False,
+                                                                verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, editable=False,
+                                                                      verbose_name='modified')),
             ],
         ),
         migrations.CreateModel(
@@ -38,31 +59,40 @@ class Migration(migrations.Migration):
                 ('ordering', models.PositiveIntegerField()),
                 ('hide_from_toc', models.BooleanField(default=False)),
                 ('visible_to_staff_only', models.BooleanField(default=False)),
-                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, editable=False, verbose_name='created')),
-                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, editable=False, verbose_name='modified')),
+                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, editable=False,
+                                                                verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, editable=False,
+                                                                      verbose_name='modified')),
             ],
         ),
         migrations.CreateModel(
             name='LearningContext',
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('context_key', opaque_keys.edx.django.models.LearningContextKeyField(db_index=True, max_length=255, unique=True)),
+                ('context_key',
+                 opaque_keys.edx.django.models.LearningContextKeyField(db_index=True, max_length=255, unique=True)),
                 ('title', models.CharField(max_length=255)),
                 ('published_at', models.DateTimeField()),
                 ('published_version', models.CharField(max_length=255)),
-                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, editable=False, verbose_name='created')),
-                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, editable=False, verbose_name='modified')),
+                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, editable=False,
+                                                                verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, editable=False,
+                                                                      verbose_name='modified')),
             ],
         ),
         migrations.CreateModel(
             name='LearningSequence',
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('learning_context', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sequences', to='learning_sequences.LearningContext')),
+                ('learning_context', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                                       related_name='sequences',
+                                                       to='learning_sequences.LearningContext')),
                 ('usage_key', opaque_keys.edx.django.models.UsageKeyField(max_length=255)),
                 ('title', models.CharField(max_length=1000)),
-                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, editable=False, verbose_name='created')),
-                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, editable=False, verbose_name='modified')),
+                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now,
+                                                                editable=False, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now,
+                                                                      editable=False, verbose_name='modified')),
             ],
         ),
         migrations.AddIndex(
@@ -72,22 +102,26 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='coursesectionsequence',
             name='learning_context',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='section_sequences', to='learning_sequences.LearningContext'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='section_sequences',
+                                    to='learning_sequences.LearningContext'),
         ),
         migrations.AddField(
             model_name='coursesectionsequence',
             name='section',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='learning_sequences.CourseSection'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                    to='learning_sequences.CourseSection'),
         ),
         migrations.AddField(
             model_name='coursesectionsequence',
             name='sequence',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='learning_sequences.LearningSequence'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                    to='learning_sequences.LearningSequence'),
         ),
         migrations.AddField(
             model_name='coursesection',
             name='learning_context',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sections', to='learning_sequences.LearningContext'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sections',
+                                    to='learning_sequences.LearningContext'),
         ),
         migrations.AlterUniqueTogether(
             name='learningsequence',
@@ -109,16 +143,8 @@ class Migration(migrations.Migration):
         # Custom code: Convert columns to utf8_bin because we want to allow
         # case-sensitive comparisons for things like UsageKeys, CourseKeys, and
         # slugs.
-        migrations.RunSQL(
-            'ALTER TABLE learning_sequences_learningcontext MODIFY context_key VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin;',
-            reverse_sql=migrations.RunSQL.noop,
-        ),
-        migrations.RunSQL(
-            'ALTER TABLE learning_sequences_coursesection MODIFY usage_key VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin;',
-            reverse_sql=migrations.RunSQL.noop,
-        ),
-        migrations.RunSQL(
-            'ALTER TABLE learning_sequences_learningsequence MODIFY usage_key VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin;',
-            reverse_sql=migrations.RunSQL.noop,
+        migrations.RunPython(
+            forwards,
+            reverse_code=migrations.RunPython.noop,
         ),
     ]
